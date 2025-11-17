@@ -1,0 +1,11 @@
+/* static/css/style.css */
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.btn-primary {
+  background-color: #0d6efd;
+}
