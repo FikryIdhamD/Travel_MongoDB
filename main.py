@@ -1,7 +1,7 @@
 # main.py
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from routes import user, schedule, booking, review
+from routes import user, schedule, booking, review, company
 from database import client
 import uvicorn
 
@@ -11,6 +11,7 @@ app.include_router(user.router, prefix="/api/users")
 app.include_router(schedule.router, prefix="/api/schedules")
 app.include_router(booking.router, prefix="/api/bookings")
 app.include_router(review.router, prefix="/api/reviews") 
+app.include_router(company.router, prefix="/api/companies")
 
 # Serve static files (HTML, CSS, JS)
 app.mount("/static", StaticFiles(directory="static"), name="static")

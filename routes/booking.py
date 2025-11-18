@@ -1,10 +1,12 @@
 # routes/booking.py
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from models.booking import BookingCreate
 from database import bookings, schedules, users
 from bson import ObjectId
 from datetime import datetime
 from typing import List
+
+from utils.auth import get_current_user_admin
 
 router = APIRouter()
 
@@ -164,3 +166,23 @@ async def cancel_booking(booking_id: str):
 
     bookings.delete_one({"_id": ObjectId(booking_id)})
     return {"message": "Booking dibatalkan dan stok dikembalikan"}
+
+# routes/booking.py → TAMBAH ROUTE BARU DI BAWAH
+
+@router.put("/{booking_id}/complete")
+async def complete_booking(
+    booking_id: str,
+    current_admin = Depends(get_current_user_admin)  # dari utils/auth.py
+):
+    if not ObjectId.is_valid(booking_id):
+        raise HTTPException(400, "booking_id tidak valid")
+
+    result = bookings.update_one(
+        {"_id": ObjectId(booking_id)},
+        {"$set": {"status": "completed", "completed_at": datetime.utcnow()}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(404, "Booking tidak ditemukan atau gagal diupdate")
+
+    return {"message": "Booking selesai! User sekarang bisa memberikan ulasan."}

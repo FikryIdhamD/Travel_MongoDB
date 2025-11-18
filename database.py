@@ -13,3 +13,4 @@ users = db.users
 schedules = db.schedules
 bookings = db.bookings
 reviews = db.reviews 
+companies = db.companies
