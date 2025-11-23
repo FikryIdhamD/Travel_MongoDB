@@ -255,47 +255,75 @@ async function loadPopular() {
 }
 
 async function loadBookingHistory() {
-  const res = await fetch(apiUrl("bookings"));
-  const bookings = await res.json();
-  const container = document.getElementById("booking-history");
-  container.innerHTML = "<h5>Riwayat Booking</h5>";
-
-  if (!bookings.length) {
-    container.innerHTML += "<p class='text-muted'>Belum ada booking.</p>";
+  // 1. Dapatkan ID pengguna yang sedang login
+  // Ganti dengan metode yang benar untuk mendapatkan User ID di aplikasi Anda.
+  const userId = currentUser.id; // Contoh pengambilan dari localStorage
+  
+  if (!userId) {
+    console.error("User ID tidak ditemukan. Tidak dapat memuat riwayat booking.");
+    document.getElementById("booking-history").innerHTML = "<h5>Riwayat Booking</h5><p class='text-danger'>Harap login untuk melihat riwayat.</p>";
     return;
   }
 
-  bookings.forEach(b => {
-    const canReview = b.status === "completed" && !b.has_review; // nanti bisa cek dari backend
-    container.innerHTML += `
-      <div class="card mb-3">
-        <div class="card-body">
-          <div class="d-flex justify-content-between">
-            <div>
-              <strong>${b.booking_code}</strong> • ${b.passenger_name} (${b.passenger_count}x)<br>
-              <small>${b.schedule_info.origin} → ${b.schedule_info.destination} 
-              • ${new Date(b.schedule_info.departure_date).toLocaleDateString('id-ID')}</small><br>
-              <span class="badge bg-success">Rp ${b.total_price.toLocaleString('id-ID')}</span>
-              <span class="badge ${b.status === 'completed' ? 'bg-success' : 'bg-warning'}">${b.status}</span>
+  const container = document.getElementById("booking-history");
+  container.innerHTML = "<h5>Riwayat Booking</h5>";
+
+  try {
+    // 2. Ganti URL fetch untuk menggunakan endpoint 'get booking by user' yang baru
+    const res = await fetch(apiUrl(`bookings/user/${userId}`));
+    
+    if (!res.ok) {
+      // Tangani jika server merespons dengan error (misalnya 404 jika ID tidak valid)
+      throw new Error(`Gagal memuat booking: ${res.statusText}`);
+    }
+
+    const bookings = await res.json();
+    
+    if (!bookings.length) {
+      container.innerHTML += "<p class='text-muted'>Belum ada booking.</p>";
+      return;
+    }
+
+    // 3. Iterasi dan tampilkan data
+    bookings.forEach(b => {
+      // Cek status untuk menampilkan tombol ulasan (hanya jika completed DAN status_review pending)
+      const showReviewButton = b.status_review === "pending" && b.status === "completed";
+
+      container.innerHTML += `
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>${b.booking_code}</strong> • ${b.passenger_name} (${b.passenger_count}x)<br>
+                <small>${b.schedule_info.origin} → ${b.schedule_info.destination} 
+                • ${new Date(b.schedule_info.departure_date).toLocaleDateString('id-ID')}</small><br>
+                <span class="badge bg-success">Rp ${b.total_price.toLocaleString('id-ID')}</span>
+                <span class="badge ${b.status === 'completed' ? 'bg-success' : (b.status === 'cancelled' ? 'bg-danger' : 'bg-warning')}">${b.status.toUpperCase()}</span>
+              </div>
+              ${showReviewButton ? `
+                <button class="btn btn-primary btn-sm" onclick="openReviewForm('${b._id}', '${b.schedule_info.company?.name || 'Perusahaan'}')">
+                  Beri Ulasan
+                </button>` : ''}
             </div>
-            ${b.status === "completed" ? `
-              <button class="btn btn-primary btn-sm" onclick="openReviewForm('${b._id}', '${b.schedule_info.company?.name || 'Perusahaan'}')">
-                Beri Ulasan
-              </button>` : ''}
           </div>
-        </div>
-      </div>`;
-  });
+        </div>`;
+    });
+
+  } catch (error) {
+    console.error("Error loading booking history:", error);
+    container.innerHTML += `<p class='text-danger'>Terjadi kesalahan saat mengambil data.</p>`;
+  }
 }
 
 function openReviewForm(bookingId, companyName) {
   const modal = new bootstrap.Modal(document.getElementById("reviewModal") || createReviewModal());
   document.getElementById("reviewModalLabel").textContent = `Ulasan untuk ${companyName}`;
+  
   document.getElementById("reviewModalBody").innerHTML = `
     <form id="reviewForm">
       <input type="hidden" id="review_booking_id" value="${bookingId}">
       <div class="mb-3">
-        <label>Rating</label><br>
+        <label class="form-label">Rating</label><br>
         <div class="star-rating">
           ${[5,4,3,2,1].map(i => `
             <span class="star" style="font-size:2rem;cursor:pointer" onclick="setRating(${i})">☆</span>
@@ -304,34 +332,48 @@ function openReviewForm(bookingId, companyName) {
         <input type="hidden" id="selected_rating" value="5">
       </div>
       <div class="mb-3">
-        <label>Komentar (opsional)</label>
+        <label class="form-label">Komentar (opsional)</label>
         <textarea class="form-control" id="review_comment" rows="3"></textarea>
       </div>
-      <button type="submit" class="btn btn-success">Kirim Ulasan</button>
+      <div class="text-end">
+        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Batal</button>
+        <button type="submit" class="btn btn-success">Kirim Ulasan</button>
+      </div>
     </form>`;
 
+  // Reset rating ke 5 bintang setiap buka modal
+  setRating(5);
+
+  // SUBMIT REVIEW → yang paling penting di sini
   document.getElementById("reviewForm").onsubmit = async (e) => {
     e.preventDefault();
+
     const payload = {
       booking_id: bookingId,
       rating: parseInt(document.getElementById("selected_rating").value),
       comment: document.getElementById("review_comment").value.trim() || null
     };
 
-    const res = await fetch(apiUrl("reviews"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    try {
+      const res = await fetch(apiUrl("reviews"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
 
-    if (res.ok) {
-      alert("Terima kasih atas ulasannya!");
-      modal.hide();
-      loadBookingHistory();
-      loadCompanies();
-    } else {
-      const err = await res.json();
-      alert(err.detail || "Gagal mengirim ulasan");
+      if (res.ok) {
+        alert("Terima kasih atas ulasannya!");
+        modal.hide();
+        
+        // INI YANG HARUS ADA → refresh data terbaru!
+        loadBookingHistory();   // ← tombol akan hilang otomatis
+        loadCompanies();        // ← rating perusahaan langsung update
+      } else {
+        const err = await res.json();
+        alert(err.detail || "Gagal mengirim ulasan");
+      }
+    } catch (err) {
+      alert("Koneksi gagal");
     }
   };
 

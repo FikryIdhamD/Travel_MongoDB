@@ -51,6 +51,11 @@ async def create_review(review_in: ReviewCreate):
         "created_at": datetime.utcnow()
     }
     result = reviews.insert_one(review_doc)
+
+    bookings.update_one(
+        {"_id": ObjectId(review_in.booking_id)},
+        {"$set": {"status_review": "done"}}
+    )
     # UPDATE RATING CACHED DI COLLECTION COMPANIES
     avg_pipeline = [
         {"$match": {"company_id": company_id}},
