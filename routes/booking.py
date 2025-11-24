@@ -202,6 +202,68 @@ async def get_bookings():
 
     return result
 
+@router.get("/{booking_id}", response_model=dict)
+async def get_booking(booking_id: str, current_admin=Depends(get_current_user_admin)):
+    if not ObjectId.is_valid(booking_id):
+        raise HTTPException(400, "ID tidak valid")
+    pipeline = [
+        {"$match": {"_id": ObjectId(booking_id)}},
+        {"$lookup": {
+            "from": "users",
+            "localField": "user_id",
+            "foreignField": "_id",
+            "as": "user_info"
+        }},
+        # Join schedules + company
+        {"$lookup": {
+            "from": "schedules",
+            "localField": "schedule_id",
+            "foreignField": "_id",
+            "as": "schedule_info"
+        }},
+        {"$unwind": {"path": "$user_info", "preserveNullAndEmptyArrays": True}},
+        {"$unwind": {"path": "$schedule_info", "preserveNullAndEmptyArrays": True}},
+        # Join company di dalam schedule_info (biar company name langsung ada)
+        {"$lookup": {
+            "from": "companies",
+            "localField": "schedule_info.company_id",
+            "foreignField": "_id",
+            "as": "schedule_info.company"
+        }},
+        {"$unwind": {"path": "$schedule_info.company", "preserveNullAndEmptyArrays": True}},
+
+        {"$project": {
+            # Field utama
+            "_id": {"$toString": "$_id"},                  # ← jadi string, nama field tetap "_id"
+            "booking_code": 1,
+            "status": 1,
+            "status_review": 1,                            # ← WAJIB ADA!!!
+            "total_price": 1,
+            "passenger_name": 1,
+            "passenger_count": 1,
+            "booking_date": 1,
+
+            # User info
+            "user_info.name": 1,
+            "user_info.email": 1,
+
+            # Schedule info
+            "schedule_info.origin": 1,
+            "schedule_info.destination": 1,
+            "schedule_info.departure_date": 1,
+            "schedule_info.price": 1,
+            "schedule_info.type": 1,
+            "schedule_info.company.name": 1,               # ← company name langsung ada
+        }}
+    ]
+    try:
+        booking = next(bookings.aggregate(pipeline))
+        if "status_review" not in booking or booking["status_review"] is None:
+            booking["status_review"] = "pending"
+        return booking
+    except StopIteration:
+        raise HTTPException(404, "Booking tidak ditemukan")
+    
 # === PUT: Update Status Booking (opsional) ===
 @router.put("/{booking_id}/status")
 async def update_booking_status(booking_id: str, status: str):

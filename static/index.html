@@ -1,84 +1,406 @@
-<!-- static/index.html -->
-
 <!DOCTYPE html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TravelGo - Tiket Mudah</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <link rel="stylesheet" href="/static/css/style.css"/>
-</head>
-<body class="bg-light">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="/">TravelGo</a>
-      <div id="auth-section"></div>
-    </div>
-  </nav>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TravelGo - Tiket Mudah & Admin Panel</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <style>
+      .star {
+        cursor: pointer;
+        font-size: 2rem;
+      }
+      .star.active {
+        color: #ffc107;
+      }
+      .admin-hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+      <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="/">TravelGo</a>
+        <div id="auth-section" class="text-white"></div>
+      </div>
+    </nav>
 
-  <div class="container mt-4" id="app">
-    <!-- Login / Register -->
-    <div class="row justify-content-center" id="auth-form">
-      <div class="col-md-5">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title" id="auth-title">Login</h5>
-            <form id="authForm">
-              <div class="mb-3"><input type="email" class="form-control" id="email" placeholder="Email" required/></div>
-              <div class="mb-3"><input type="password" class="form-control" id="password" placeholder="Password" required/></div>
-              <button type="submit" class="btn btn-primary w-100">Masuk</button>
-              <p class="text-center mt-2"><a href="#" id="toggle-auth">Belum punya akun? Daftar</a></p>
-            </form>
+    <div class="container mt-4" id="app">
+      <!-- ==================== FORM LOGIN / REGISTER ==================== -->
+      <div class="row justify-content-center" id="auth-form">
+        <div class="col-md-6 col-lg-5">
+          <div class="card shadow">
+            <div class="card-body p-5">
+              <h4 class="card-title text-center mb-4" id="auth-title">Login</h4>
+              <form id="authForm">
+                <div class="mb-3">
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    placeholder="Email"
+                    required
+                    autocomplete="email"
+                  />
+                </div>
+                <div class="mb-4">
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="password"
+                    placeholder="Password"
+                    required
+                    autocomplete="current-password"
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mb-3">
+                  Masuk
+                </button>
+                <p class="text-center">
+                  <a href="#" id="toggle-auth" class="text-decoration-none"
+                    >Belum punya akun? Daftar</a
+                  >
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== MAIN APP (Setelah Login) ==================== -->
+      <div id="main-app" style="display: none">
+        <!-- Tab Navigasi Utama -->
+        <ul class="nav nav-tabs mb-4" id="mainTab" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#search"
+              >Cari Tiket</a
+            >
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#companies"
+              >Perusahaan</a
+            >
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#history"
+              >Riwayat Booking</a
+            >
+          </li>
+          <li class="nav-item" id="admin-tab" style="display: none">
+            <a class="nav-link" data-bs-toggle="tab" href="#admin">
+              <strong>Admin Panel</strong>
+            </a>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- TAB 1: Cari Tiket -->
+          <div class="tab-pane fade show active" id="search">
+            <div class="card shadow-sm mb-4">
+              <div class="card-body">
+                <h5 class="card-title">Cari Jadwal Perjalanan</h5>
+                <form id="searchForm" class="row g-3">
+                  <div class="col-md-3">
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Asal"
+                      id="origin"
+                      required
+                    />
+                  </div>
+                  <div class="col-md-3">
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Tujuan"
+                      id="destination"
+                      required
+                    />
+                  </div>
+                  <div class="col-md-2">
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="departure_date"
+                      required
+                    />
+                  </div>
+                  <div class="col-md-2">
+                    <select class="form-select" id="type">
+                      <option value="">Semua</option>
+                      <option value="bus">Bus</option>
+                      <option value="flight">Pesawat</option>
+                      <option value="train">Kereta</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <button type="submit" class="btn btn-success w-100">
+                      Cari
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div id="results"></div>
+            <div id="popular" class="mt-5"></div>
+          </div>
+
+          <!-- TAB 2: Daftar Perusahaan -->
+          <div class="tab-pane fade" id="companies">
+            <h4 class="mb-4">Daftar Perusahaan Travel</h4>
+            <div class="row" id="company-list"></div>
+          </div>
+
+          <!-- TAB 3: Riwayat Booking -->
+          <div class="tab-pane fade" id="history">
+            <h4 class="mb-4">Riwayat Booking Anda</h4>
+            <div id="booking-history"></div>
+          </div>
+
+          <!-- TAB 4: ADMIN PANEL (Hanya muncul jika login sebagai admin) -->
+          <div class="tab-pane fade" id="admin">
+            <h3 class="mb-4 text-primary">Admin Panel</h3>
+
+            <ul class="nav nav-pills mb-4" id="adminSubTab">
+              <li class="nav-item">
+                <a
+                  class="nav-link active"
+                  data-bs-toggle="pill"
+                  href="#admin-users"
+                  >Users</a
+                >
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  data-bs-toggle="pill"
+                  href="#admin-companies"
+                  >Companies</a
+                >
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  data-bs-toggle="pill"
+                  href="#admin-schedules"
+                  >Schedules</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="pill" href="#admin-bookings"
+                  >Bookings</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="pill" href="#admin-reviews"
+                  >Reviews</a
+                >
+              </li>
+            </ul>
+
+            <div class="tab-content">
+              <!-- Users -->
+              <div class="tab-pane fade show active" id="admin-users">
+                <button
+                  class="btn btn-primary mb-3"
+                  onclick="showAdminForm('user')"
+                >
+                  + Tambah User
+                </button>
+                <div class="table-responsive">
+                  <table
+                    class="table table-hover table-bordered"
+                    id="admin-users-table"
+                  >
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Phone</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Companies -->
+              <div class="tab-pane fade" id="admin-companies">
+                <button
+                  class="btn btn-primary mb-3"
+                  onclick="showAdminForm('company')"
+                >
+                  + Tambah Perusahaan
+                </button>
+                <div class="table-responsive">
+                  <table
+                    class="table table-bordered"
+                    id="admin-companies-table"
+                  >
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th>Tipe</th>
+                        <th>Deskripsi</th>
+                        <th>Rating</th>
+                        <th>Ulasan</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Schedules -->
+              <div class="tab-pane fade" id="admin-schedules">
+                <button
+                  class="btn btn-primary mb-3"
+                  onclick="showAdminForm('schedule')"
+                >
+                  + Tambah Jadwal
+                </button>
+                <div class="table-responsive">
+                  <table
+                    class="table table-bordered"
+                    id="admin-schedules-table"
+                  >
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Tipe</th>
+                        <th>Asal → Tujuan</th>
+                        <th>Berangkat</th>
+                        <th>Harga</th>
+                        <th>Kursi</th>
+                        <th>Perusahaan</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Bookings -->
+              <div class="tab-pane fade" id="admin-bookings">
+                <button
+                  class="btn btn-primary mb-3"
+                  onclick="showAdminForm('booking')"
+                >
+                  + Tambah Booking (Manual)
+                </button>
+                <div class="table-responsive">
+                  <table class="table table-bordered" id="admin-bookings-table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Kode</th>
+                        <th>Status</th>
+                        <th>Penumpang</th>
+                        <th>Total</th>
+                        <th>Jadwal</th>
+                        <th>User</th>
+                        <th>Status Review</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Reviews -->
+              <div class="tab-pane fade" id="admin-reviews">
+                <button
+                  class="btn btn-primary mb-3"
+                  onclick="showAdminForm('review')"
+                >
+                  + Tambah Review (Manual)
+                </button>
+                <div class="table-responsive">
+                  <table class="table table-bordered" id="admin-reviews-table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Rating</th>
+                        <th>Komentar</th>
+                        <th>Perusahaan</th>
+                        <th>User</th>
+                        <th>Tanggal</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Main App -->
-    <div id="main-app" style="display: none;">
-    <!-- Navigasi Tab -->
-    <ul class="nav nav-tabs mb-4" id="mainTab" role="tablist">
-      <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#search">Cari Tiket</a></li>
-      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#companies">Perusahaan</a></li>
-      <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history">Riwayat Booking</a></li>
-    </ul>
-
-    <div class="tab-content">
-      <!-- TAB 1: Cari Tiket (yang sudah ada) -->
-      <div class="tab-pane fade show active" id="search">
-        <div class="card mb-4">
-          <div class="card-body">
-            <h5>Cari Jadwal</h5>
-            <form id="searchForm" class="row g-2">
-              <div class="col-md-3"><input type="text" class="form-control" placeholder="Asal" id="origin"/></div>
-              <div class="col-md-3"><input type="text" class="form-control" placeholder="Tujuan" id="destination"/></div>
-              <div class="col-md-2"><input type="date" class="form-control" id="departure_date"/></div>
-              <div class="col-md-2"><select class="form-select" id="type"><option value="">Semua</option><option>bus</option><option>flight</option><option>train</option></select></div>
-              <div class="col-md-2"><button type="submit" class="btn btn-success w-100">Cari</button></div>
-            </form>
+    <!-- Modal untuk Review Pelanggan (sudah ada) -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="reviewModalLabel">Ulasan</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
           </div>
+          <div class="modal-body" id="reviewModalBody"></div>
         </div>
-        <div id="results"></div>
-        <div id="popular" class="mt-5"></div>
-      </div>
-
-      <!-- TAB 2: Daftar Perusahaan -->
-      <div class="tab-pane fade" id="companies">
-        <h4>Daftar Perusahaan Travel</h4>
-        <div id="company-list" class="row"></div>
-      </div>
-
-      <!-- TAB 3: Riwayat Booking + Tombol Review -->
-      <div class="tab-pane fade" id="history">
-        <h4>Riwayat Booking Anda</h4>
-        <div id="booking-history"></div>
       </div>
     </div>
-  </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/static/js/main.js"></script>
-</body>
+    <!-- Modal Umum untuk Form Admin (Create/Edit) -->
+    <div class="modal fade" id="adminModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="adminModalLabel">Form</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body" id="adminModalBody">
+            <!-- Form diisi via JS -->
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Batal
+            </button>
+            <button type="button" class="btn btn-primary" id="adminSubmitBtn">
+              Simpan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/main.js"></script>
+  </body>
 </html>

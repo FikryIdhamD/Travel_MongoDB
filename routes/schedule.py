@@ -198,3 +198,41 @@ async def delete_schedule(
     
     schedules.delete_one({"_id": ObjectId(id)})
     return {"message": "Jadwal dihapus"}
+
+@router.get("/{id}", response_model=dict)
+async def get_schedule(id: str):
+    if not ObjectId.is_valid(id):
+        raise HTTPException(400, "ID tidak valid")
+    pipeline = [
+        {"$match": {"_id": ObjectId(id)}},
+        {"$lookup": {
+            "from": "companies",
+            "localField": "company_id",
+            "foreignField": "_id",
+            "as": "company_info"
+        }},
+        {"$unwind": {"path": "$company_info", "preserveNullAndEmptyArrays": True}},
+        {"$project": {
+            "id": {"$toString": "$_id"},
+            "_id": 0,
+            "type": 1,
+            "origin": 1,
+            "destination": 1,
+            "departure_date": 1,
+            "arrival_date": 1,
+            "price": 1,
+            "available_seats": 1,
+            "company": {
+                "id": {"$toString": "$company_info._id"},
+                "name": "$company_info.name",
+                "type": "$company_info.type"
+            }
+        }}
+    ]
+    try:
+        sched = next(schedules.aggregate(pipeline))
+        if not sched.get("company"):
+            sched["company"] = {"id": None, "name": "Unknown", "type": "unknown"}
+        return sched
+    except StopIteration:
+        raise HTTPException(404, "Jadwal tidak ditemukan")

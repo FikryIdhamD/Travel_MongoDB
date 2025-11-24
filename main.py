@@ -1,5 +1,6 @@
 # main.py
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from routes import user, schedule, booking, review, company
 from database import client
@@ -17,8 +18,8 @@ app.include_router(company.router, prefix="/api/companies")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
-async def home():
-    return {"message": "Selamat datang di TravelGo! Buka /static/index.html"}
+async def root():
+    return FileResponse("static/index.html")
 
 @app.on_event("shutdown")
 def shutdown_db_client():

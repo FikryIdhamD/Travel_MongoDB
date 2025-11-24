@@ -15,9 +15,12 @@ def get_current_user_admin(
     
     # Validasi user benar-benar ada dan role admin
     try:
-        user = users.find_one({"_id": ObjectId(x_user_id)})
+        user_obj_id = ObjectId(x_user_id)
+        user = users.find_one({"_id": user_obj_id})
         if not user or user.get("role") != "admin":
             raise HTTPException(403, "Admin tidak valid")
         return user
-    except:
+    except ValueError:
+        raise HTTPException(400, "X-User-ID tidak valid (harus ObjectId hex)")
+    except Exception:
         raise HTTPException(403, "User ID tidak valid")
